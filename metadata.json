@@ -1,0 +1,6 @@
+{
+  "name": "Billetera Virtual",
+  "description": "Plataforma financiera SPA moderna para la gestión de saldo, alias financiero, fondeo de cuenta, transferencias e historial transaccional en tiempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
