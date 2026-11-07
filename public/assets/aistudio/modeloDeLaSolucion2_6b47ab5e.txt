@@ -1,0 +1,155 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+
+package "Microservicio de Usuarios y Autenticación" {
+    class UsuarioBoundary {
+        + registrarUsuario(request: UsuarioRequestDto): ResponseEntity
+        + autenticarYGenerarToken(request: AuthRequestDto): ResponseEntity
+    }
+
+    class AutenticacionControl {
+        - usuarioRepository: UsuarioRepository
+        - tokenProvider: TokenProvider
+        - billeteraClientAdapter: BilleteraClientAdapter
+        + registrarYValidarCorreo(correo: String, nombre: String): String
+        + generarTokenFirmadoRSA(usuarioId: String): String
+    }
+
+    class BilleteraClientAdapter {
+        - walletServiceEndpoint: String
+        + solicitarAperturaBilletera(idUsuario: String): boolean
+    }
+
+    class UsuarioEntity {
+        - idUsuario: String
+        - correoElectronico: String
+        - contraseñaHash: String
+        - verificado: boolean
+        + verificarCorreo(): boolean
+    }
+}
+
+package "Microservicio de Billetera Virtual (Wallet System)" {
+    
+    package "Capa de Frontera (Boundary)" {
+        class BilleteraBoundary {
+            + consultarSaldo(request: HttpServletRequest): ResponseEntity
+            + consultarAlias(request: HttpServletRequest): ResponseEntity
+            + actualizarAlias(request: HttpServletRequest, requestDto: AliasRequestDto): ResponseEntity
+            + aperturarBilletera(request: AperturaBilleteraDto): ResponseEntity
+        }
+
+        class TransaccionBoundary {
+            + realizarFondeo(requestHttp: HttpServletRequest, request: FondeoRequestDto): ResponseEntity
+            + realizarTransferencia(request: HttpServletRequest, transferenciaDto: TransferenciaRequestDto): ResponseEntity
+            + consultarHistorial(requestHttp: HttpServletRequest): ResponseEntity
+        }
+    }
+
+    package "Capa de Control (Control / Casos de Uso)" {
+        class GestionBilleteraControl {
+            - billeteraDAO: BilleteraDAO
+            + verificarYConsultarSaldo(idUsuario: String, montoRequerido: Double): boolean
+            + obtenerSaldoPorUsuario(idUsuario: String): Double
+            + actualizarAliasPorUsuario(idUsuario: String, nuevoAlias: String): void
+            + obtenerAliasPorUsuario(idUsuario: String): String
+        }
+
+        class RealizarFondeoControl {
+            - billeteraDAO: BilleteraDAO
+            - transaccionDAO: TransaccionDAO
+            + ejecutarFondeoPorUsuario(idUsuario: String, monto: Double, medioOrigen: MedioOrigen): void
+        }
+
+        class TransferenciaInternaControl {
+            - billeteraDAO: BilleteraDAO
+            - transaccionDAO: TransaccionDAO
+            + ejecutarTransferenciaPorAlias(idUsuarioOrigen: String, aliasDestino: String, monto: Double): void
+        }
+
+        class ConsultarHistorialControl {
+            - billeteraDAO: BilleteraDAO
+            - transaccionDAO: TransaccionDAO
+            + obtenerHistorialPorUsuario(idUsuario: String): List<Transaccion>
+        }
+
+        class AperturaBilleteraControl {
+            - billeteraDAO: BilleteraDAO
+            + ejecutarApertura(idUsuario: String): void
+        }
+    }
+
+    package "Capa de Entidades e Infraestructura (Entity / DAO)" {
+        class AuthServiceAdapter {
+            - publicKeyEndpoint: String
+            + verificarFirmaTokenRSA(token: String): String
+        }
+
+        class Billetera {
+            - idBilletera: Long
+            - idUsuario: String
+            - saldoActual: Double
+            - alias: String
+            + getSaldoActual(): Double
+            + getAlias(): String
+        }
+
+        class Transaccion {
+            - idTransaccion: Long
+            - idBilletera: Long
+            - fechaHora: Date
+            - monto: Double
+            - estado: String
+            - tipoMovimiento: String
+            - tipoTransaccion: String
+        }
+
+        class TransferenciaInterna {
+            - idBilleteraDestino: Long
+        }
+
+        class Fondeo {
+            - medioOrigen: MedioOrigen
+        }
+
+        class BilleteraJdbcDAO {
+            - jdbcTemplate: JdbcTemplate
+            + guardar(billetera: Billetera): void
+            + actualizarSaldo(idBilletera: Long, nuevoSaldo: Double): void
+            + actualizarAlias(idBilletera: Long, nuevoAlias: String): void
+            + buscarPorIdUsuario(idUsuario: String): Optional<Billetera>
+            + buscarPorAlias(alias: String): Optional<Billetera>
+        }
+    }
+}
+
+' Relaciones arquitectónicas cruzadas entre Microservicios
+BilleteraBoundary --> GestionBilleteraControl : delega orquestación >
+TransaccionBoundary --> RealizarFondeoControl : delega >
+TransaccionBoundary --> TransferenciaInternaControl : delega >
+TransaccionBoundary --> ConsultarHistorialControl : delega >
+BilleteraBoundary --> AperturaBilleteraControl : delega >
+
+AuthServiceAdapter ..> UsuarioBoundary : consume API REST / Clave Pública (RSA) >
+
+' Relación del Adaptador Síncrono del Servicio de Usuarios hacia la Billetera
+AutenticacionControl --> BilleteraClientAdapter : delega apertura síncrona >
+BilleteraClientAdapter ..> BilleteraBoundary : HTTP POST /api/billeteras/apertura >
+
+' Relaciones internas de la Billetera (BCE)
+GestionBilleteraControl --> BilleteraJdbcDAO : utiliza >
+RealizarFondeoControl --> BilleteraJdbcDAO : utiliza >
+TransferenciaInternaControl --> BilleteraJdbcDAO : utiliza >
+ConsultarHistorialControl --> BilleteraJdbcDAO : utiliza >
+AperturaBilleteraControl --> BilleteraJdbcDAO : utiliza >
+
+Billetera "1" o-- "*" Transaccion : registra >
+Transaccion <|-- TransferenciaInterna : hereda >
+Transaccion <|-- Fondeo : hereda >
+
+' Relaciones internas del Microservicio de Usuarios
+UsuarioBoundary --> AutenticacionControl : delega >
+AutenticacionControl --> UsuarioEntity : persiste / valida >
+@enduml

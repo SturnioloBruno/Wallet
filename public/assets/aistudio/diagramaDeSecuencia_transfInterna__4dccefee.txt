@@ -1,0 +1,52 @@
+@startuml
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Usuario Emisor" as User
+participant "TransaccionBoundary\n(Frontera)" as Boundary
+participant "JwtAuthFilter\n(Seguridad Perimetral)" as Filter
+participant "TransferenciaInternaControl\n(Control / Caso de Uso)" as Control
+participant "BilleteraJdbcDAO\n(Persistencia DAO)" as Dao
+participant "Entity\n(Billetera Origen/Destino)" as Wallet
+participant "TransaccionDAO\n(Historial)" as TxDao
+
+autonumber "<b>[00]"
+
+User -> Boundary: POST /api/transacciones/transferencia-interna (Authorization: Bearer JWT, TransferenciaRequestDto)
+activate Boundary
+
+Boundary -> Filter: doFilter() - Extrae y valida firma asimétrica RSA
+activate Filter
+Filter --> Boundary: idUsuarioAutenticado inyectado en Request Context
+deactivate Filter
+
+Boundary -> Control: ejecutarTransferenciaPorAlias(idUsuarioOrigen, aliasDestino, monto)
+activate Control
+
+Control -> Dao: buscarPorIdUsuario(idUsuarioOrigen)
+activate Dao
+Dao --> Control: Billetera Origen (idBilletera, saldoActual)
+deactivate Dao
+
+Control -> Dao: buscarPorAlias(aliasDestino)
+activate Dao
+Dao --> Control: Billetera Destino (idBilletera, saldoActual)
+deactivate Dao
+
+Control -> Wallet: Validar suficiencia de fondos y cuenta distinta
+Control -> Dao: actualizarSaldo(idOrigen, nuevoSaldoOrigen)
+Control -> Dao: actualizarSaldo(idDestino, nuevoSaldoDestino)
+
+Control -> TxDao: guardarTransferenciaInterna(transferencia)
+activate TxDao
+TxDao --> Control: Transacción Registrada OK
+deactivate TxDao
+
+Control --> Boundary: Ejecución Exitosa (HTTP 201 Created)
+deactivate Control
+
+Boundary --> User: Respuesta Formal de Transferencia Exitosa
+deactivate Boundary
+@enduml

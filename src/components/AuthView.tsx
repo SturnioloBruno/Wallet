@@ -18,9 +18,14 @@ import {
 interface AuthViewProps {
   onAuthSuccess: (token: string, email: string) => void;
   onOpenDiagnostics: () => void;
+  onOpenBehindTheScenes?: () => void;
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onOpenDiagnostics }) => {
+export const AuthView: React.FC<AuthViewProps> = ({
+  onAuthSuccess,
+  onOpenDiagnostics,
+  onOpenBehindTheScenes,
+}) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   
   // Login Form State
@@ -114,27 +119,62 @@ export const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onOpenDiagnos
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
           <span className="font-semibold text-slate-300">Billetera Virtual</span>
           <span className="text-slate-600">·</span>
-          <span>Google Cloud Run Microservices</span>
+          <span>Microservicios en Contenedores</span>
         </div>
 
-        <button
-          onClick={onOpenDiagnostics}
-          className="flex items-center gap-1.5 px-2.5 py-1 text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 rounded-lg transition-colors cursor-pointer"
-        >
-          <Activity className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Diagnóstico de Red</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenBehindTheScenes}
+            className="flex items-center gap-1.5 px-3 py-1 text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 rounded-lg transition-all cursor-pointer font-medium"
+            title="Ver arquitectura RUP, microservicios y CV de Bruno Sturniolo"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Detrás de Escena (CV &amp; RUP)</span>
+          </button>
+
+          <button
+            onClick={onOpenDiagnostics}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 rounded-lg transition-colors cursor-pointer"
+          >
+            <Activity className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Diagnóstico de Red</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Centered Container */}
       <div className="max-w-md w-full mx-auto my-auto pt-6 pb-8">
         
+        {/* Recruiter / HR Highlight Banner */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 shadow-lg space-y-2 text-left">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Sobre el Desarrollador
+            </span>
+            <span className="text-[11px] font-medium text-slate-400">Bruno S. Sturniolo</span>
+          </div>
+          <h2 className="text-xs sm:text-sm font-bold text-white leading-snug">
+            Backend Developer con Cultura DevOps
+          </h2>
+          <p className="text-[11px] text-slate-300 leading-relaxed">
+            Aplicaciones ligeras, económicas y de alto rendimiento (persistencia híbrida, RUP, modelado BCE y despliegues serverless).
+          </p>
+          <button
+            type="button"
+            onClick={onOpenBehindTheScenes}
+            className="w-full mt-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>Ver Detrás de Escena &amp; Contacto</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         {/* Brand Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-white mb-2">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold tracking-tight text-white mb-1.5">
             Sistema de Billetera Virtual
           </h1>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
             Acceso seguro a su cuenta financiera, transferencias inmediatas y consulta de saldos.
           </p>
         </div>
@@ -371,8 +411,19 @@ export const AuthView: React.FC<AuthViewProps> = ({ onAuthSuccess, onOpenDiagnos
       </div>
 
       {/* Footer Info */}
-      <footer className="text-center text-xs text-slate-400">
-        <p>Capa de Presentación SPA conectada a Google Cloud Run en southamerica-east1</p>
+      <footer className="text-center text-xs text-slate-400 space-y-2">
+        <p>Capa de Presentación SPA conectada a microservicios en la nube</p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={onOpenBehindTheScenes}
+            className="text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer font-medium"
+          >
+            Detrás de Escena &amp; Arquitectura RUP (CV Técnico)
+          </button>
+          <span>·</span>
+          <span>Desarrollado por Bruno S. Sturniolo</span>
+        </div>
       </footer>
     </div>
   );

@@ -1,0 +1,27 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+
+title Diagrama de Componentes - Subsistemas Distribuidos
+
+package "Microservicio de Usuarios y Autenticación" {
+    [auth-service.jar] as AuthJar
+    [Módulo de Criptografía RSA (Clave Privada)] as CryptoModule
+    database "Firebase / NoSQL Datastore" as UserDB
+    
+    AuthJar --> CryptoModule : firma tokens
+    AuthJar --> UserDB : persiste usuarios
+}
+
+package "Microservicio de Billetera Virtual" {
+    [wallet-service.jar] as WalletJar
+    [Módulo de Validación Criptográfica (Clave Pública)] as ValidationModule
+    database "Neon PostgreSQL" as WalletDB
+    
+    WalletJar --> ValidationModule : verifica tokens
+    WalletJar --> WalletDB : ejecuta JDBC Template
+}
+
+' Contrato de comunicación entre componentes compilados
+WalletJar ..> AuthJar : API REST / Intercambio de Clave Pública (HTTPS)
+@enduml

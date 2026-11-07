@@ -1,0 +1,68 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+
+package "Capa de Frontera (Boundary)" {
+    class WalletAPIController {
+        + procesarTransferenciaExterna(authHeader: String, request: TransferenciaDto): ResponseEntity
+        + consultarSaldo(authHeader: String): ResponseEntity
+    }
+}
+
+package "Capa de Control (Control / Casos de Uso)" {
+    class TransferenciaExternaControl {
+        - jwtValidatorService: JwtValidatorService
+        - billeteraRepository: BilleteraRepository
+        - transaccionRepository: TransaccionRepository
+        + ejecutarTransferenciaExterna(usuarioId: Long, monto: Double, cbuDestino: String): Transaccion
+        - ejecutarRollbackACID(transaccionId: Long, monto: Double): void
+    }
+}
+
+package "Capa de Entidades (Entity - Modelo de Dominio)" {
+    class Usuario {
+        - idUsuario: Long
+        - correoElectronico: String
+        - nombre: String
+        + getCorreoElectronico(): String
+    }
+
+    class Billetera {
+        - idBilletera: Long
+        - saldoActual: Double
+        + debitar(monto: Double): void
+        + acreditar(monto: Double): void
+        + verificarSaldo(monto: Double): boolean
+    }
+
+    class Transaccion {
+        - idTransaccion: Long
+        - fechaHora: Date
+        - monto: Double
+        - estado: String
+        + actualizarEstado(estado: String): void
+    }
+
+    class TransferenciaExterna {
+        - cvuCbuDestino: String
+        + validarCbuFormato(): boolean
+    }
+
+    class PasarelaDePagoAdapter {
+        - urlEndpoint: String
+        + invocarPagoExterno(monto: Double, destino: String): boolean
+    }
+}
+
+' Relaciones arquitectónicas del Modelo de Solución (BCE)
+WalletAPIController --> TransferenciaExternaControl : delega orquestación >
+TransferenciaExternaControl --> Billetera : gestiona saldo >
+TransferenciaExternaControl --> Transaccion : persiste / actualiza >
+TransferenciaExternaControl --> PasarelaDePagoAdapter : comunica red externa >
+
+' Relaciones estructurales heredadas del Dominio
+Usuario "1" *-- "1" Billetera : posee >
+Billetera "1" o-- "*" Transaccion : registra >
+Transaccion <|-- TransferenciaExterna : hereda >
+@enduml

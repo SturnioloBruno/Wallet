@@ -10,6 +10,7 @@ import { TransferModal } from './components/TransferModal';
 import { TransactionHistory } from './components/TransactionHistory';
 import { ApiDiagnosticsModal } from './components/ApiDiagnosticsModal';
 import { ToastContainer } from './components/ToastContainer';
+import { BehindTheScenes } from './components/BehindTheScenes';
 import { ShieldCheck, RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownLeft, Database, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
@@ -43,7 +44,24 @@ export default function App() {
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
 
   // Navegación
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'historial'>('dashboard');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'historial' | 'behindTheScenes'>('dashboard');
+
+  // Listener para enlaces directos tipo #detras-de-escena o #behind-the-scenes
+  useEffect(() => {
+    const handleHash = () => {
+      const h = window.location.hash.toLowerCase();
+      if (h.includes('detras-de-escena') || h.includes('behind-the-scenes') || h.includes('cv') || h.includes('desarrollo') || h.includes('arquitectura')) {
+        setActiveSection('behindTheScenes');
+      } else if (h.includes('historial')) {
+        setActiveSection('historial');
+      } else if (h.includes('dashboard')) {
+        setActiveSection('dashboard');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // Notificaciones Toast
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -175,6 +193,19 @@ export default function App() {
     setAlias(newAlias);
   };
 
+  // Si está en la sección 'behindTheScenes', renderizarla directamente tanto para invitados/reclutadores como usuarios autenticados
+  if (activeSection === 'behindTheScenes') {
+    return (
+      <>
+        <BehindTheScenes
+          onBack={() => setActiveSection('dashboard')}
+          onShowToast={showToast}
+        />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
+
   // Si no está autenticado, renderizar la vista de Login/Registro
   if (!isAuthenticated) {
     return (
@@ -182,6 +213,7 @@ export default function App() {
         <AuthView
           onAuthSuccess={handleAuthSuccess}
           onOpenDiagnostics={() => setIsDiagnosticsOpen(true)}
+          onOpenBehindTheScenes={() => setActiveSection('behindTheScenes')}
         />
         <ApiDiagnosticsModal
           isOpen={isDiagnosticsOpen}
@@ -206,10 +238,12 @@ export default function App() {
         onOpenTransfer={() => setIsTransferOpen(true)}
         activeSection={activeSection}
         onNavigateSection={(sec) => {
-          setActiveSection(sec as 'dashboard' | 'historial');
-          const element = document.getElementById(sec);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
+          setActiveSection(sec as 'dashboard' | 'historial' | 'behindTheScenes');
+          if (sec !== 'behindTheScenes') {
+            const element = document.getElementById(sec);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth' });
+            }
           }
         }}
       />
@@ -360,7 +394,15 @@ export default function App() {
             <span aria-hidden="true">·</span>
             <span>Microservicios Usuarios & Wallet</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-400">
+          <div className="flex flex-wrap items-center gap-4 text-slate-400">
+            <button
+              onClick={() => setActiveSection('behindTheScenes')}
+              className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Detrás de Escena (CV &amp; RUP)</span>
+            </button>
+            <span>·</span>
             <button
               onClick={() => setIsDiagnosticsOpen(true)}
               className="hover:text-slate-200 transition-colors cursor-pointer"
@@ -368,7 +410,7 @@ export default function App() {
               Diagnóstico de Red
             </button>
             <span>·</span>
-            <span>Cloud Run southamerica-east1</span>
+            <span>Microservicios en Contenedores Serverless</span>
           </div>
         </div>
       </footer>

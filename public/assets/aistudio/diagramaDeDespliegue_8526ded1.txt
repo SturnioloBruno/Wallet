@@ -1,0 +1,41 @@
+@startuml
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+
+title Diagrama de Despliegue - Topología de Infraestructura
+
+node "Cliente (Navegador / App Frontend)" as Client {
+    artifact "Interfaz de Usuario (SPA / Mobile)"
+}
+
+node "Google Cloud Run\n(Contenedor Java / Tomcat)" as WalletNode {
+    component "wallet-service.jar\n(Boundary, Control, DAO)" as WalletComp
+    note right of WalletComp
+      **Recurso Local:**
+      Almacena la Clave Pública RSA
+      para validar la firma de los tokens
+      sin consultar la base de datos ajena.
+    end note
+}
+
+node "Neon Cloud (PostgreSQL)" as DBNode {
+    database "Instancia Relacional\n(Tablas: billetera, transaccion)" as RelDB
+}
+
+node "Google Firebase Platform" as FirebaseNode {
+    component "Auth & User Service\n(Microservicio Independiente)" as UserComp
+    note right of UserComp
+      **Recurso Local:**
+      Almacena la Clave Privada RSA
+      exclusiva para emitir y firmar
+      los JWT de autenticación.
+    end note
+    database "Firebase NoSQL / Firestore\n(Colección: usuarios)" as NoSQLDB
+}
+
+' Canales de comunicación física y protocolos
+Client --> WalletNode : HTTPS (Requests de Billetera)
+WalletNode --> DBNode : TCP/IP (HikariCP / Pool de Conexiones JDBC)
+WalletNode ..> FirebaseNode : HTTPS (Validación asimétrica / Fetch Clave Pública)
+UserComp --> NoSQLDB : Operaciones de Persistencia NoSQL
+@enduml

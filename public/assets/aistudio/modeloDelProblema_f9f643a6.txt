@@ -1,0 +1,69 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+
+class Usuario {
+    correoElectronico
+    nombre
+}
+
+class Billetera {
+    idBilletera
+    saldoActual
+}
+
+class Transaccion {
+    idTransaccion
+    fechaHora
+    monto
+    estado
+}
+
+class Fondeo {
+    medioOrigen
+}
+
+class Retiro {
+    cuentaDestino
+}
+
+class TransferenciaInterna {
+    aliasDestino
+}
+
+class TransferenciaExterna {
+    cvuCbuDestino
+}
+
+class PasarelaDePago {
+    nombrePasarela
+    estadoConexion
+}
+
+class Disputa {
+    idDisputa
+    motivo
+    estadoDisputa
+}
+
+class Comprobante {
+    numeroOperacion
+    formato
+}
+
+' Relaciones estructurales y cardinalidades del dominio
+Usuario "1" -- "1" Billetera : posee >
+Billetera "1" o-- "*" Transaccion : registra >
+
+' Especialización conceptual de Transacciones (Jerarquía de Dominio)
+Transaccion <|-- Fondeo
+Transaccion <|-- Retiro
+Transaccion <|-- TransferenciaInterna
+Transaccion <|-- TransferenciaExterna
+
+' Colaboraciones con agentes externos y entidades accesorias
+Transaccion "*" --> "0..1" PasarelaDePago : utiliza a través de API >
+Transaccion "1" -- "0..1" Disputa : puede originar >
+Transaccion "1" -- "1" Comprobante : genera >
+@enduml

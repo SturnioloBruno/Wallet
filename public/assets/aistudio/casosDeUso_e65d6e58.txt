@@ -1,0 +1,46 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor LightBlue
+  BorderColor DarkBlue
+  ArrowColor Black
+}
+
+actor "Usuario" as User
+actor "Pasarela de Pago" as Gateway << Sistema Externo >>
+
+rectangle "Billetera Virtual (Wallet System)" {
+  usecase "Consultar Saldo e Historial" as UC_ConsultarSaldo
+  usecase "Realizar Fondeo" as UC_Fondeo
+  usecase "Realizar Retiro" as UC_Retiro
+  usecase "Transferencia Interna" as UC_TransfInt
+  usecase "Transferencia Externa" as UC_TransfExt
+  
+  usecase "Descargar / Compartir Comprobante" as UC_Comprobante
+  usecase "Abrir Disputa" as UC_Disputa
+  usecase "Configurar Notificaciones" as UC_ConfigNotif
+  usecase "Consultar Notificaciones" as UC_VerNotif
+}
+
+' Relaciones directas del Usuario (ordenadas para evitar cruces)
+User --> UC_ConsultarSaldo
+User --> UC_Fondeo
+User --> UC_Retiro
+User --> UC_TransfInt
+User --> UC_TransfExt
+User --> UC_Disputa
+User --> UC_ConfigNotif
+User --> UC_VerNotif
+
+' Comprobante como extensión limpia y opcional
+UC_Comprobante .up.> UC_Fondeo : <<extend>>
+UC_Comprobante .up.> UC_Retiro : <<extend>>
+UC_Comprobante .up.> UC_TransfExt : <<extend>>
+UC_Comprobante .up.> UC_TransfInt : <<extend>>
+
+' Conexiones paralelas y limpias con el Sistema Externo (Sin cruces de líneas)
+UC_Fondeo ---> Gateway
+UC_Retiro ---> Gateway
+UC_TransfExt ---> Gateway
+@enduml

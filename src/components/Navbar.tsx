@@ -80,6 +80,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           <button
+            onClick={() => onNavigateSection?.('behindTheScenes')}
+            className={`flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 text-left cursor-pointer px-2.5 py-1 rounded-lg ${
+              activeSection === 'behindTheScenes'
+                ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30'
+                : 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-900 border border-emerald-500/20'
+            }`}
+            title="Conoce la arquitectura RUP, microservicios y credenciales del desarrollador"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Detrás de Escena (CV &amp; RUP)</span>
+          </button>
+
+          <button
             onClick={onOpenDiagnostics}
             className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             title="Diagnóstico de Microservicios Cloud Run y Proxy"

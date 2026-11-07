@@ -1,0 +1,69 @@
+@startuml
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Usuario / Cliente" as User
+participant "UsuarioBoundary\n(Frontera)" as Boundary
+participant "AutenticacionControl\n(Control)" as Control
+participant "UsuarioDao\n(Firestore)" as Dao
+participant "BilleteraClientAdapter\n(Adaptador Red)" as Adapter
+participant "BilleteraBoundary\n(Frontera Billetera)" as WalletBoundary
+
+autonumber "<b>[00]"
+
+User -> Boundary: Registrar Usuario (correo, nombre, contraseña)
+activate Boundary
+
+Boundary -> Control: registrarUsuario(correo, nombre, contraseña)
+activate Control
+
+Control -> Dao: buscarPorCorreo(correo)
+activate Dao
+Dao --> Control: null (Correo disponible)
+deactivate Dao
+
+Control -> Dao: guardar(nuevoUsuario)
+activate Dao
+Dao --> Control: Persistencia Firestore EXITOSA
+deactivate Dao
+
+' Bloque de comunicación síncrona con el subsistema de billeteras
+group Apertura Sincrónica de Cuenta Financiera
+    Control -> Adapter: solicitarAperturaBilletera(idUsuario)
+    activate Adapter
+    
+    Adapter -> WalletBoundary: HTTP POST /api/billeteras/apertura (idUsuario)
+    activate WalletBoundary
+    
+    alt Fallo de Red o Timeout en el Nodo Billetera
+        WalletBoundary --> Adapter: Excepción / Connection Refused (HTTP 503)
+        deactivate WalletBoundary
+        
+        Adapter --> Control: Error de Comunicación Remota
+        deactivate Adapter
+        
+        ' Transacción compensatoria por consistencia estricta
+        Control -> Dao: eliminarUsuario(idUsuario) (Compensación ACID)
+        activate Dao
+        Dao --> Control: Usuario Revertido OK
+        deactivate Dao
+        
+        Control --> Boundary: Retornar Error Transaccional (Subsistema No Disponible)
+        
+    else Apertura Exitosa en la Billetera
+        WalletBoundary --> Adapter: Billetera Creada Exitosamente (HTTP 201 Created)
+        deactivate WalletBoundary
+        
+        Adapter --> Control: Confirmación OK
+        deactivate Adapter
+        
+        Control --> Boundary: Usuario Registrado y Billetera Asociada OK
+    end
+end
+
+Boundary --> User: Respuesta formal de la operación
+deactivate Control
+deactivate Boundary
+@enduml
